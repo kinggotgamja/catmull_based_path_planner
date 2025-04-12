@@ -1,0 +1,4 @@
+<launch>
+  <rosparam file="$(find nrs_vr_catmull)/config/setting.yaml" command="load" />
+  <node pkg="nrs_vr_catmull" type="power_gmm_main" name="power_gmm_node" output="screen" />
+</launch>

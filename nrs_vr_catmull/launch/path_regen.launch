@@ -1,0 +1,4 @@
+<launch>
+  <rosparam file="$(find nrs_vr_catmull)/config/setting.yaml" command="load" />
+  <node pkg="nrs_vr_catmull" type="path_regen_main" name="path_regen_node" output="screen" />
+</launch>

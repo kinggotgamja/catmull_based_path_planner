@@ -1,0 +1,15 @@
+<package format="2">
+  <name>catmull_uniform_path_planner</name>
+  <version>0.0.1</version>
+  <description>Catmull-Rom based uniform path planner with quaternion support</description>
+  <maintainer email="user@example.com">User</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+</package>

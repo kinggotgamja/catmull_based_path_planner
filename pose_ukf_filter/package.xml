@@ -1,0 +1,15 @@
+<package format="2">
+  <name>pose_ukf_filter</name>
+  <version>0.0.1</version>
+  <description>UKF-based pose filter for position and orientation using quaternions</description>
+
+  <maintainer email="you@example.com">Yonoo Kim</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf</depend>
+  <depend>tf_conversions</depend>
+
+</package>
