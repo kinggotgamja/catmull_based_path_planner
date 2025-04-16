@@ -96,7 +96,9 @@ int main(int argc, char** argv) {
 
     std::string resample_path, PoseGMM_path, PowerGMM_path;
     std::vector<double> force_override_vec = {0.0, 0.0, 0.0};
+    std::vector<double> auto_override_force_vec = {0.0, 0.0, 0.0};
     double force_threshold = 10.0;
+    bool des_par_auto_tune = false;
 
     if (!nh.getParam("resample_path_filepath", resample_path)) {
         ROS_ERROR("Failed to get param 'resample_path_filepath'");
@@ -111,11 +113,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    nh.param("des_par_auto_tune", des_par_auto_tune, false);
     nh.getParam("override_force", force_override_vec);
+    nh.getParam("auto_override_force", auto_override_force_vec);
     nh.param("force_threshold", force_threshold, force_threshold);
 
-    Pose_GMM_Handling(resample_path, PoseGMM_path, force_threshold, force_override_vec[2]);
-    Power_GMM_Handling(resample_path, PowerGMM_path, force_threshold, force_override_vec[2]);
+    Pose_GMM_Handling(resample_path, PoseGMM_path, force_threshold, ((double)!des_par_auto_tune)*force_override_vec[2] + ((double)des_par_auto_tune)*auto_override_force_vec[2]);
+    Power_GMM_Handling(resample_path, PowerGMM_path, force_threshold, ((double)!des_par_auto_tune)*force_override_vec[2] + ((double)des_par_auto_tune)*auto_override_force_vec[2]);
 
 
     return 0;

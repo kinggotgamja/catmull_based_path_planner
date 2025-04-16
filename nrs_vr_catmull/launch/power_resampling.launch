@@ -1,0 +1,5 @@
+<launch>
+  <rosparam file="$(find nrs_vr_catmull)/config/setting.yaml" command="load" />
+  <param name="config_file" value="$(find nrs_vr_catmull)/config/pathgen_setting.yaml" />
+  <node pkg="nrs_vr_catmull" type="power_resampling" name="power_resampling_node" output="screen" />
+</launch>

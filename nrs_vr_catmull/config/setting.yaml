@@ -1,14 +1,16 @@
+# ---- recording pathes ---- #
 raw_path_filepath: "/home/yuni/catkin_ws/src/nrs_vr_catmull/data/raw_path.txt"
 resample_path_filepath: "/home/yuni/catkin_ws/src/nrs_vr_catmull/data/resample_path.txt"
 regen_path_filepath: "/home/yuni/catkin_ws/src/nrs_vr_catmull/data/regen_path.txt"
 posegmm_path_filepath: "/home/yuni/catkin_ws/src/nrs_vr_catmull/data/posegmm_path.txt"
 powergmm_path_filepath: "/home/yuni/catkin_ws/src/nrs_vr_catmull/data/powergmm_path.txt"
-path_resolution: 0.00002 # meters
 
-# resampling parameters
-downsample_num: 1 # downsampled path points
-resampled_smoothing_num: 1 # smoothing points
+# ---- resampling parameters ---- #
+downsample_num: 1 # downsampled path points (Used to make a path smooth at AIDIN path)
+resampled_smoothing_num: 1 # smoothing points (Used to make a path smooth at Resampled path)
+acc_time: 0.0 # acceleration time in seconds (Used to make a path smooth at Resampled path), 0 : off
 
+# ---- UKF parameters ---- #
 ukf_auto_tune: false
 ukf_dt: 0.002 # Control time step in seconds
 
@@ -19,5 +21,9 @@ ukf_q_ori: 0.00000001
 ukf_r_pos: 0.01
 ukf_r_ori: 10.0
 
+# ---- Desired parameter used in path generation ---- #
+des_par_auto_tune: true
 force_threshold: 2.0 # Contact detection threshold in N
-override_force: [0.0, 0.0, 17.0] # Desired force in N
+path_resolution: 0.00005 # meters/sampling_time
+override_force: [0.0, 0.0, 10.0] # Desired force in N
+
