@@ -1,0 +1,12 @@
+<launch>
+  <!-- load basic yaml file -->
+  <rosparam file="$(find nrs_vr_catmull)/config/setting.yaml" command="load" />
+
+  <!-- load additional yaml file -->
+  <rosparam file="$(find nrs_vr_catmull)/config/pathgen_setting.yaml" command="load" />
+
+  <!-- Execution nodes -->
+  <node pkg="nrs_vr_catmull" type="path_regen_main" name="path_regen_node" output="screen" />
+  <node pkg="nrs_vr_catmull" type="power_gmm_main" name="power_gmm_node" output="screen" />
+
+</launch>
