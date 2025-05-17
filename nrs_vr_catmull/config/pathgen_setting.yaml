@@ -1,5 +1,6 @@
+auto_mean_velocity: 0.07030633414442071
 auto_override_force:
   - 0
   - 0
-  - 16.65978340809651
-auto_path_resolution: 0.0001489405543707371
+  - 18.15998048037375
+auto_path_resolution: 0.0001406126682888414

@@ -1,11 +1,15 @@
 #include <ros/ros.h>
 #include "catmull_uniform_path_planner/catmull_path.h"
 #include "pose_ukf_filter/PoseUKF.hpp"
+#include "nrs_blender_pkg/Profiler.h"
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <vector>
+
+using namespace std;
 
 Eigen::Quaterniond rpyToQuaternion(double roll, double pitch, double yaw) {
     Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
@@ -104,7 +108,7 @@ void savePowerPathToFile(const std::string& filepath, const std::vector<Power>& 
     bool init = true;
     double roll, pitch, yaw;
 
-    int removal_size = 500;
+    int removal_size = 1900;
     int removal_count = 0;
     for (const auto& power : path) {
         if (removal_count < removal_size) {
@@ -136,6 +140,59 @@ void savePowerPathToFile(const std::string& filepath, const std::vector<Power>& 
     ROS_INFO_STREAM("Saved regenerated path to " << filepath);
 }
 
+std::vector<Power> Power_motion_blender(const std::vector<Power>& Loaded_data, 
+ double Sampling_time, double Starting_time, double Last_resting_time, double Acceleration_time, int Colum_num)
+{
+    /* Parameter Initialization */
+    double time_counter = 0; // Time counter (Do not modify)
+    std::vector<std::vector<double>> blendedPath; 
+    std::vector<Power> blended_data;
+
+    /* Motion blender */
+    for (size_t i = 0; i < Colum_num; i++) { // iterate through each column
+        std::vector<double> time, data;
+        time_counter = 0;
+        for (const auto& row : Loaded_data) {
+            time.push_back(time_counter*Sampling_time);
+            if(i<3) {data.push_back(row.position(i));}
+            if (i < 7) {
+                if (i == 3) data.push_back(row.orientation.w());
+                else if (i == 4) data.push_back(row.orientation.x());
+                else if (i == 5) data.push_back(row.orientation.y());
+                else if (i == 6) data.push_back(row.orientation.z());
+            }
+            else {data.push_back(row.force(i-7));}
+            time_counter ++;
+        }
+        
+        NRSProfiler profiler(time, data, Starting_time, Last_resting_time, Acceleration_time, Sampling_time);
+        vector<vector<double>> result = profiler.AccDecProfiling();
+
+        if(i == 0) {blendedPath.resize(result.size(), vector<double>(Colum_num, 0.0));}
+
+        uint64_t BP_counter = 0;
+        for(const auto& row : result)
+        {
+            blendedPath[BP_counter][i] = row[1];
+            BP_counter++;
+        }
+    }
+
+     /* Transmit to output form */
+     for(const auto& data:blendedPath)
+    {
+        Eigen::Vector3d pos(data[0], data[1], data[2]);
+        Eigen::Quaterniond ori(data[3], data[4], data[5], data[6]);
+        Eigen::Vector3d force(data[7], data[8], data[9]);
+
+        blended_data.push_back({pos, ori.normalized(), force});
+        // blended_data.push_back({pos, ori, force});
+    }
+
+    return blended_data;
+
+}
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "path_regen_node");
     ros::NodeHandle nh;
@@ -145,6 +202,7 @@ int main(int argc, char** argv) {
     double auto_resolution = 0.1;
     int downsample_num = 1;
     int resampled_smoothing_num = 1;
+    double regen_acc_time = 0.5; // Acceleration time for motion blending
     
     double dt = 0.002;
     double force_threshold = 10.0;
@@ -188,9 +246,10 @@ int main(int argc, char** argv) {
     nh.param("des_par_auto_tune", des_par_auto_tune, false);
     nh.getParam("override_force", force_override_vec);
     nh.getParam("auto_override_force", auto_override_force_vec);
+    nh.getParam("regen_acc_time", regen_acc_time);
     
     Eigen::Vector3d override_force;
-    if(des_par_auto_tune) {override_force = {force_override_vec[0], force_override_vec[1], force_override_vec[2]};}
+    if(!des_par_auto_tune) {override_force = {force_override_vec[0], force_override_vec[1], force_override_vec[2]};}
     else {override_force = {auto_override_force_vec[0], auto_override_force_vec[1], auto_override_force_vec[2]};}
 
     /* UKF 초기 생성 */
@@ -232,6 +291,8 @@ int main(int argc, char** argv) {
     /* AIDIN continuous path generation */
     auto path = catmull_power_path::generateUniformCatmullPowerPath(control_powers, downsample_num, 
         ((double)!des_par_auto_tune)*resolution + ((double)des_par_auto_tune)*auto_resolution);
+    
+    if(regen_acc_time > 0) {path = Power_motion_blender(path, dt, 3, 3, regen_acc_time, 10);}
 
     savePowerPathToFile(output_path, path);
 

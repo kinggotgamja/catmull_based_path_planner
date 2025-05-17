@@ -18,7 +18,7 @@ class Power_resampling
         static std::vector<Power> Power_data_resampling(const std::string& input_filename, const std::string& resampl_filename, const int times, const int resampled_smoothing_num, const double dt, const double acc_time);
         static std::vector<Power> Power_motion_blender(const std::vector<Power>& Loaded_data, double Sampling_time, double Starting_time=3, double Last_resting_time=3, double Acceleration_time=0.5, int Colum_num=10);
         static void MeanForceVelocity(const std::vector<Power>& path, const double force_threshold, const double dt, double& mean_force, double& mean_velocity);
-        static void saveToYaml(const std::string& yaml_file, const std::vector<double>& force_override_vec, const double mean_velocity);
+        static void saveToYaml(const std::string& yaml_file, const std::vector<double>& force_override_vec, const double mean_velocity, const double dt);
         static Eigen::Quaterniond rpyToQuaternion(double roll, double pitch, double yaw);
         static void quaternionToRPY(const Eigen::Quaterniond& q, double& roll, double& pitch, double& yaw);
 
@@ -189,7 +189,7 @@ void Power_resampling::MeanForceVelocity(const std::vector<Power>& path, const d
     ROS_INFO_STREAM("Mean Force: " << mean_force << ", Mean Velocity: " << mean_velocity);
 }
 
-void Power_resampling::saveToYaml(const std::string& yaml_file, const std::vector<double>& force_override_vec, const double mean_velocity) {
+void Power_resampling::saveToYaml(const std::string& yaml_file, const std::vector<double>& force_override_vec, const double mean_velocity, const double dt) {
     // YAML 파일을 읽어옵니다.
     YAML::Node config;
     try {
@@ -207,6 +207,13 @@ void Power_resampling::saveToYaml(const std::string& yaml_file, const std::vecto
     }
 
     // 'mean_velocity' 키를 수정
+    if (config["auto_mean_velocity"]) {
+        config["auto_mean_velocity"] = mean_velocity/dt;  // 기존 값을 수정
+    } else {
+        config["auto_mean_velocity"] = mean_velocity/dt;  // 키가 없으면 새로 추가
+    }
+
+    // 'path_resolution' 키를 수정
     if (config["auto_path_resolution"]) {
         config["auto_path_resolution"] = mean_velocity;  // 기존 값을 수정
     } else {
@@ -224,14 +231,13 @@ void Power_resampling::saveToYaml(const std::string& yaml_file, const std::vecto
     }
 }
 
-
 int main(int argc, char** argv) {
     ros::init(argc, argv, "power_resampling_node");
     ros::NodeHandle nh;
 
     std::string input_path, resample_path;
     int resampled_smoothing_num = 1;
-    
+
     double dt = 0.002;
     double acc_time = 0.5; // Acceleration time for motion blending
     double force_threshold = 10.0;
@@ -270,7 +276,7 @@ int main(int argc, char** argv) {
     force_override_vec = {0.0, 0.0, fabs(MeanForce)};  // 절댓값으로 force 값을 설정
     ROS_INFO_STREAM("Updated override_force: " << force_override_vec[0] << ", " << force_override_vec[1] << ", " << force_override_vec[2]);
 
-    Power_resampling::saveToYaml(config_file, force_override_vec, MeanVelocity*dt);
+    Power_resampling::saveToYaml(config_file, force_override_vec, MeanVelocity*dt, dt);
 
     return 0;
 }
